@@ -1,0 +1,24 @@
+{
+  "functions": {
+    "targets": [
+      "wallet_note_function"
+    ],
+    "ignore": [],
+    "source": "functions"
+  },
+  "client": {
+    "source": "client"
+  },
+  "appsail": [
+    {
+      "source": "appsail-python",
+      "name": "AppSail"
+    }
+  ],
+  "slate": [
+    {
+      "name": "wallet-note-client",
+      "source": "client"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "41833000000087004",
+      "name": "Wallet-Note",
+      "domain": {
+        "id": "50043058092",
+        "name": "wallet-note-60072054003.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60072054003",
+          "name": "Development",
+          "type": 3
+        }
+      ]
+    }
+  ]
+}

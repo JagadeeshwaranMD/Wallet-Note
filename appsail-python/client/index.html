@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet Note — Personal Finance, Money Tracking & Debt Management System</title>
+  <script>
+    (function() {
+      const saved = localStorage.getItem('wallet_note_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  <link rel="stylesheet" href="main.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-header">
+      <div class="brand-icon">
+        <i data-lucide="wallet"></i>
+      </div>
+      <div class="brand-text">
+        <h2>Wallet Note</h2>
+        <p>Finance & Ledger</p>
+      </div>
+    </div>
+
+    <ul class="nav-links">
+      <div class="nav-group-title">Overview</div>
+      <li>
+        <a class="nav-item active" data-view="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <div class="nav-group-title">Money In & Out</div>
+      <li>
+        <a class="nav-item" data-view="incomes">
+          <i data-lucide="trending-up"></i>
+          <span>Income</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" data-view="expenses">
+          <i data-lucide="trending-down"></i>
+          <span>Expenses</span>
+        </a>
+      </li>
+
+      <div class="nav-group-title">Debt & Loans</div>
+      <li>
+        <a class="nav-item" data-view="borrowings">
+          <i data-lucide="arrow-down-left"></i>
+          <span>Borrowed Money</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" data-view="lendings">
+          <i data-lucide="arrow-up-right"></i>
+          <span>Lent Money</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" data-view="people">
+          <i data-lucide="users"></i>
+          <span>People Directory</span>
+        </a>
+      </li>
+
+      <div class="nav-group-title">Banking & Records</div>
+      <li>
+        <a class="nav-item" data-view="accounts">
+          <i data-lucide="credit-card"></i>
+          <span>Accounts & Cash</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" data-view="transactions">
+          <i data-lucide="receipt"></i>
+          <span>Transactions Register</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" data-view="reminders">
+          <i data-lucide="bell"></i>
+          <span>Reminders & Due Dates</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-item" data-view="reports">
+          <i data-lucide="bar-chart-3"></i>
+          <span>Financial Reports</span>
+        </a>
+      </li>
+
+      <div class="nav-group-title">System</div>
+      <li>
+        <a class="nav-item" data-view="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="catalyst-badge" id="catalyst-status-pill" title="Connected to Zoho Catalyst Project: Wallet-Note">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="status-dot"></span>
+          <span>Zoho Catalyst</span>
+        </div>
+        <button class="btn-secondary btn-sm" id="btn-sync-catalyst" title="Sync with Catalyst Data Store">
+          <i data-lucide="refresh-cw" style="width:12px; height:12px;"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <main class="main-wrapper">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-toggle">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="page-title">
+          <h1 id="current-page-title">Dashboard</h1>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Quick Action Dropdown -->
+        <div class="dropdown">
+          <button class="btn-quick-add" id="btn-quick-menu">
+            <i data-lucide="plus"></i>
+            <span>Add Transaction</span>
+            <i data-lucide="chevron-down" style="width:14px; height:14px;"></i>
+          </button>
+          <div class="dropdown-menu" id="quick-dropdown">
+            <a class="dropdown-item" onclick="openModal('modal-income')">
+              <i data-lucide="trending-up" style="color:var(--success)"></i> Add Income
+            </a>
+            <a class="dropdown-item" onclick="openModal('modal-expense')">
+              <i data-lucide="trending-down" style="color:var(--danger)"></i> Add Expense
+            </a>
+            <a class="dropdown-item" onclick="openModal('modal-borrow')">
+              <i data-lucide="arrow-down-left" style="color:var(--warning)"></i> Borrow Money
+            </a>
+            <a class="dropdown-item" onclick="openModal('modal-lend')">
+              <i data-lucide="arrow-up-right" style="color:var(--info)"></i> Lend Money
+            </a>
+            <a class="dropdown-item" onclick="openModal('modal-transfer')">
+              <i data-lucide="repeat" style="color:var(--primary)"></i> Transfer Funds
+            </a>
+          </div>
+        </div>
+
+        <!-- Reminders Bell -->
+        <button class="icon-btn" id="btn-reminders-bell" title="Upcoming & Overdue Obligations" onclick="navigate('reminders')">
+          <i data-lucide="bell"></i>
+          <span class="notif-badge" id="topbar-notif-count" style="display:none;">0</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="btn-theme-toggle" title="Toggle Light / Dark Mode">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Views -->
+    <div class="content-container">
+
+      <!-- 1. DASHBOARD VIEW (FR-01) -->
+      <section class="page-view active" id="view-dashboard">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-muted)">Date Range:</span>
+            <select class="select-input" id="dash-date-filter" onchange="DashboardModule.load()">
+              <option value="all">All Time</option>
+              <option value="this_month" selected>This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_year">This Year</option>
+            </select>
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="DashboardModule.load()">
+              <i data-lucide="refresh-cw"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card" onclick="navigate('incomes')">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Income</span>
+              <div class="kpi-icon income"><i data-lucide="trending-up"></i></div>
+            </div>
+            <div class="kpi-value amt-positive" id="dash-total-income">₹0.00</div>
+            <div class="kpi-subtext">Ordinary income earned</div>
+          </div>
+
+          <div class="kpi-card" onclick="navigate('expenses')">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Expenses</span>
+              <div class="kpi-icon expense"><i data-lucide="trending-down"></i></div>
+            </div>
+            <div class="kpi-value amt-negative" id="dash-total-expense">₹0.00</div>
+            <div class="kpi-subtext">Personal living expenditures</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Net Income</span>
+              <div class="kpi-icon balance"><i data-lucide="scale"></i></div>
+            </div>
+            <div class="kpi-value" id="dash-net-income">₹0.00</div>
+            <div class="kpi-subtext">Income minus Expenses</div>
+          </div>
+
+          <div class="kpi-card" onclick="navigate('accounts')">
+            <div class="kpi-header">
+              <span class="kpi-title">Available Funds</span>
+              <div class="kpi-icon balance"><i data-lucide="wallet"></i></div>
+            </div>
+            <div class="kpi-value" id="dash-available-balance">₹0.00</div>
+            <div class="kpi-subtext">Across all active accounts</div>
+          </div>
+        </div>
+
+        <!-- Debt & Loans KPI Row -->
+        <div class="kpi-grid" style="margin-top:-8px;">
+          <div class="kpi-card" onclick="navigate('borrowings')">
+            <div class="kpi-header">
+              <span class="kpi-title">Outstanding Payables</span>
+              <div class="kpi-icon payable"><i data-lucide="arrow-down-left"></i></div>
+            </div>
+            <div class="kpi-value amt-negative" id="dash-outstanding-payables">₹0.00</div>
+            <div class="kpi-subtext" id="dash-borrowed-subtext">Borrowed: ₹0 | Repaid: ₹0</div>
+          </div>
+
+          <div class="kpi-card" onclick="navigate('lendings')">
+            <div class="kpi-header">
+              <span class="kpi-title">Outstanding Receivables</span>
+              <div class="kpi-icon receivable"><i data-lucide="arrow-up-right"></i></div>
+            </div>
+            <div class="kpi-value amt-positive" id="dash-outstanding-receivables">₹0.00</div>
+            <div class="kpi-subtext" id="dash-lent-subtext">Lent: ₹0 | Collected: ₹0</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts & Pending Split -->
+        <div class="dashboard-grid">
+          <!-- Monthly Trend Comparison -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Monthly Income & Expense Comparison</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="chart-monthly-trends" height="130"></canvas>
+            </div>
+          </div>
+
+          <!-- Expense Category Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Expense by Category</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="chart-category-breakdown" height="190"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Obligations & Recent Transactions Grid -->
+        <div class="dashboard-grid">
+          <!-- Pending Obligations -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Pending Repayments & Collections</h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Person</th>
+                      <th>Remaining</th>
+                      <th>Due Date</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash-pending-table-body">
+                    <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No pending obligations.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Transactions -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Recent Transactions</h3>
+              <a onclick="navigate('transactions')" style="font-size:0.78rem; color:var(--primary); cursor:pointer; font-weight:600;">View All</a>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Details</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash-recent-txns-body">
+                    <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No transactions recorded.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. INCOMES VIEW (FR-02) -->
+      <section class="page-view" id="view-incomes">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <input type="text" class="search-input" id="income-search" placeholder="Search source, payer, reference..." oninput="IncomeModule.load()">
+            <select class="select-input" id="income-account-filter" onchange="IncomeModule.load()">
+              <option value="">All Accounts</option>
+            </select>
+            <input type="date" class="date-input" id="income-start-date" onchange="IncomeModule.load()">
+            <input type="date" class="date-input" id="income-end-date" onchange="IncomeModule.load()">
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-primary" onclick="openModal('modal-income')">
+              <i data-lucide="plus"></i> Record Income
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Date</th>
+                    <th>Source</th>
+                    <th>Received From</th>
+                    <th>Account</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="incomes-table-body">
+                  <tr><td colspan="8" style="text-align:center;">Loading income records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. EXPENSES VIEW (FR-03) -->
+      <section class="page-view" id="view-expenses">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <input type="text" class="search-input" id="expense-search" placeholder="Search category, payee, reference..." oninput="ExpenseModule.load()">
+            <select class="select-input" id="expense-category-filter" onchange="ExpenseModule.load()">
+              <option value="">All Categories</option>
+            </select>
+            <select class="select-input" id="expense-account-filter" onchange="ExpenseModule.load()">
+              <option value="">All Accounts</option>
+            </select>
+            <input type="date" class="date-input" id="expense-start-date" onchange="ExpenseModule.load()">
+            <input type="date" class="date-input" id="expense-end-date" onchange="ExpenseModule.load()">
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-primary" onclick="openModal('modal-expense')">
+              <i data-lucide="plus"></i> Record Expense
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Paid To</th>
+                    <th>Account</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="expenses-table-body">
+                  <tr><td colspan="8" style="text-align:center;">Loading expense records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. BORROWED MONEY VIEW (FR-04) -->
+      <section class="page-view" id="view-borrowings">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <select class="select-input" id="borrow-status-filter" onchange="BorrowModule.load()">
+              <option value="">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Partially Paid">Partially Paid</option>
+              <option value="Completed">Completed</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-primary" onclick="openModal('modal-borrow')">
+              <i data-lucide="plus"></i> New Borrowing
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Lender (Person)</th>
+                    <th>Borrowed Date</th>
+                    <th>Due Date</th>
+                    <th>Original Amount</th>
+                    <th>Total Repaid</th>
+                    <th>Outstanding Payable</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="borrowings-table-body">
+                  <tr><td colspan="9" style="text-align:center;">Loading borrowed money records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. LENT MONEY VIEW (FR-05) -->
+      <section class="page-view" id="view-lendings">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <select class="select-input" id="lend-status-filter" onchange="LendModule.load()">
+              <option value="">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Partially Received">Partially Received</option>
+              <option value="Completed">Completed</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-primary" onclick="openModal('modal-lend')">
+              <i data-lucide="plus"></i> New Lending
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Borrower (Person)</th>
+                    <th>Lent Date</th>
+                    <th>Return Due Date</th>
+                    <th>Original Amount</th>
+                    <th>Total Collected</th>
+                    <th>Outstanding Receivable</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="lendings-table-body">
+                  <tr><td colspan="9" style="text-align:center;">Loading lent money records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. PEOPLE MANAGEMENT (FR-07) -->
+      <section class="page-view" id="view-people">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <input type="text" class="search-input" id="people-search" placeholder="Search people..." oninput="PeopleModule.load()">
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-primary" onclick="openModal('modal-person')">
+              <i data-lucide="user-plus"></i> Add Person
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Mobile</th>
+                    <th>Money Lent (Given)</th>
+                    <th>To Collect</th>
+                    <th>Money Borrowed</th>
+                    <th>To Pay</th>
+                    <th>Net Balance</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="people-table-body">
+                  <tr><td colspan="8" style="text-align:center;">Loading people directory...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. PERSON-WISE PERSONAL LEDGER (FR-08) -->
+      <section class="page-view" id="view-ledger">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="navigate('people')">
+              <i data-lucide="arrow-left"></i> Back to People
+            </button>
+            <select class="select-input" id="ledger-person-picker" onchange="LedgerModule.load(this.value)">
+              <option value="">Select a person...</option>
+            </select>
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="window.print()">
+              <i data-lucide="printer"></i> Print Statement
+            </button>
+            <button class="btn-primary" style="background-color:#25D366; border-color:#25D366;" onclick="NotificationModule.sendLedgerStatement()">
+              <i data-lucide="send"></i> Send Statement to Phone
+            </button>
+          </div>
+        </div>
+
+        <!-- Ledger Hero Banner -->
+        <div class="ledger-hero" id="ledger-hero-card" style="display:none;">
+          <div class="ledger-hero-header">
+            <div class="ledger-person-info">
+              <h2 id="ledger-name">Person Name</h2>
+              <p id="ledger-contact">Mobile: - | Email: -</p>
+            </div>
+            <div>
+              <span class="badge" id="ledger-net-badge" style="font-size:0.9rem; padding:6px 14px;">Settled</span>
+            </div>
+          </div>
+
+          <div class="ledger-cards-row">
+            <!-- Receivable Summary -->
+            <div class="ledger-stat-box receivable">
+              <span>Receivables (Money Given)</span>
+              <h3 id="ledger-to-collect">₹0.00</h3>
+              <small id="ledger-given-collected">Total Given: ₹0 | Collected: ₹0</small>
+            </div>
+
+            <!-- Payable Summary -->
+            <div class="ledger-stat-box payable">
+              <span>Payables (Money Borrowed)</span>
+              <h3 id="ledger-to-pay">₹0.00</h3>
+              <small id="ledger-borrowed-repaid">Total Borrowed: ₹0 | Repaid: ₹0</small>
+            </div>
+
+            <!-- Net Settlement Position -->
+            <div class="ledger-stat-box net">
+              <span>Net Financial Position</span>
+              <h3 id="ledger-net-amt">₹0.00</h3>
+              <small id="ledger-net-label">All obligations settled</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statement Activity Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Complete Financial Statement & History</h3>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Classification</th>
+                    <th>Reference</th>
+                    <th>Direction</th>
+                    <th>Account</th>
+                    <th>Amount</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="ledger-activities-body">
+                  <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Please select a person to inspect their complete ledger.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. UNIFIED TRANSACTION REGISTER (FR-09) -->
+      <section class="page-view" id="view-transactions">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <input type="text" class="search-input" id="txn-search" placeholder="Search all records..." oninput="TransactionModule.load()">
+            <select class="select-input" id="txn-type-filter" onchange="TransactionModule.load()">
+              <option value="">All Transaction Types</option>
+              <option value="Income">Income</option>
+              <option value="Expense">Expense</option>
+              <option value="Borrowed Amount Received">Borrowed Money Received</option>
+              <option value="Lent Amount Disbursed">Lent Money Disbursed</option>
+              <option value="Loan Repayment">Loan Repayment</option>
+              <option value="Loan Collection">Loan Collection</option>
+              <option value="Account Transfer">Internal Account Transfer</option>
+            </select>
+            <select class="select-input" id="txn-account-filter" onchange="TransactionModule.load()">
+              <option value="">All Accounts</option>
+            </select>
+            <input type="date" class="date-input" id="txn-start-date" onchange="TransactionModule.load()">
+            <input type="date" class="date-input" id="txn-end-date" onchange="TransactionModule.load()">
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="exportTableToCSV('transactions-table', 'wallet_note_transactions.csv')">
+              <i data-lucide="download"></i> Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table" id="transactions-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Date</th>
+                    <th>Classification</th>
+                    <th>Description / Details</th>
+                    <th>Person</th>
+                    <th>Account</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="transactions-table-body">
+                  <tr><td colspan="7" style="text-align:center;">Loading unified transaction register...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. ACCOUNTS & PASSBOOK (FR-10) -->
+      <section class="page-view" id="view-accounts">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <span style="font-weight:600; color:var(--text-muted);">Manage cash wallets, bank accounts & UPI</span>
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="openModal('modal-transfer')">
+              <i data-lucide="repeat"></i> Transfer Funds
+            </button>
+            <button class="btn-primary" onclick="openModal('modal-account')">
+              <i data-lucide="plus"></i> Add Account
+            </button>
+          </div>
+        </div>
+
+        <!-- Accounts Grid -->
+        <div class="kpi-grid" id="accounts-cards-grid">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header">
+            <h3>Accounts Summary & Balance Reconciliation</h3>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Account Name</th>
+                    <th>Type</th>
+                    <th>Opening Balance</th>
+                    <th>Current Balance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="accounts-table-body">
+                  <tr><td colspan="6" style="text-align:center;">Loading accounts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. REMINDERS (FR-11) -->
+      <section class="page-view" id="view-reminders">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <h3>Financial Obligations & Due Dates</h3>
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="RemindersModule.load()">
+              <i data-lucide="refresh-cw"></i> Refresh Alerts
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Overdue Obligations -->
+          <div class="card" style="border-top: 4px solid var(--danger);">
+            <div class="card-header">
+              <h3 style="color:var(--danger); display:flex; align-items:center; gap:8px;">
+                <i data-lucide="alert-triangle"></i> Overdue Obligations
+              </h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Person</th>
+                      <th>Amount</th>
+                      <th>Due Date</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overdue-reminders-body">
+                    <tr><td colspan="5" style="text-align:center;">No overdue obligations. Excellent!</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Due Dates -->
+          <div class="card" style="border-top: 4px solid var(--warning);">
+            <div class="card-header">
+              <h3 style="color:var(--warning); display:flex; align-items:center; gap:8px;">
+                <i data-lucide="clock"></i> Due in the Next 7 Days
+              </h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Person</th>
+                      <th>Amount</th>
+                      <th>Due Date</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="upcoming-reminders-body">
+                    <tr><td colspan="5" style="text-align:center;">No upcoming due dates in the next 7 days.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. REPORTS & ANALYTICS (FR-12) -->
+      <section class="page-view" id="view-reports">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <select class="select-input" id="report-type-picker" onchange="ReportModule.load()" style="font-weight:600;">
+              <option value="monthly_income">1. Monthly Income Report</option>
+              <option value="monthly_expense">2. Monthly Expense Report</option>
+              <option value="yearly_summary">3. Yearly Financial Summary</option>
+              <option value="category_expense">4. Category-wise Expense Report</option>
+              <option value="income_source">5. Income Source Report</option>
+              <option value="borrowed_money">6. Borrowed Money Report</option>
+              <option value="repayment">7. Repayment Report</option>
+              <option value="lent_money">8. Lent Money Report</option>
+              <option value="collection">9. Collection Report</option>
+              <option value="outstanding_payables">10. Outstanding Payables Report</option>
+              <option value="outstanding_receivables">11. Outstanding Receivables Report</option>
+              <option value="account_balances">12. Account-wise Balance Report</option>
+            </select>
+            <input type="date" class="date-input" id="report-start-date" onchange="ReportModule.load()">
+            <input type="date" class="date-input" id="report-end-date" onchange="ReportModule.load()">
+          </div>
+          <div class="toolbar-group">
+            <button class="btn-secondary" onclick="exportTableToCSV('report-table', 'wallet_note_report.csv')">
+              <i data-lucide="download"></i> Export CSV
+            </button>
+            <button class="btn-secondary" onclick="window.print()">
+              <i data-lucide="printer"></i> Print / PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 id="report-title-heading">Report Details</h3>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="data-table" id="report-table">
+                <thead id="report-table-head"></thead>
+                <tbody id="report-table-body">
+                  <tr><td style="text-align:center;">Select a report to inspect.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. SETTINGS (FR-13) -->
+      <section class="page-view" id="view-settings">
+        <div class="dashboard-grid">
+          <!-- General Preferences -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Application Preferences</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-settings" onsubmit="event.preventDefault(); SettingsModule.saveSettings();">
+                <div class="form-group">
+                  <label>Currency Symbol</label>
+                  <input type="text" class="form-control" id="setting-currency-symbol" value="₹">
+                </div>
+                <div class="form-group">
+                  <label>Currency Code</label>
+                  <input type="text" class="form-control" id="setting-currency-code" value="INR">
+                </div>
+                <div class="form-group">
+                  <label>Interface Theme</label>
+                  <select class="form-control" id="setting-theme">
+                    <option value="light">Light Theme</option>
+                    <option value="dark">Dark Theme</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:10px;">
+                  <i data-lucide="save"></i> Save Preferences
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Zoho Catalyst Status & Category Manager -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Custom Category Management</h3>
+              <button class="btn-primary btn-sm" onclick="openModal('modal-category')">
+                <i data-lucide="plus"></i> Add Category
+              </button>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="settings-categories-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading categories...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Automated SMS Gateway Preferences -->
+          <div class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <h3 style="display:flex; align-items:center; gap:8px;">
+                <i data-lucide="message-square" style="color:var(--primary);"></i> Automated SMS Gateway Configuration
+              </h3>
+            </div>
+            <div class="card-body">
+              <form id="form-notif-settings" onsubmit="event.preventDefault(); SettingsModule.saveNotificationSettings();">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Default Country Code</label>
+                    <input type="text" class="form-control" id="setting-country-code" value="+91" placeholder="+91">
+                  </div>
+                  <div class="form-group">
+                    <label>SMS Gateway Provider</label>
+                    <select class="form-control" id="setting-notif-channel">
+                      <option value="catalyst">Catalyst Automated SMS Engine (Built-in, Instant)</option>
+                      <option value="fast2sms">Fast2SMS (India Bulk SMS Gateway)</option>
+                      <option value="twilio">Twilio Cloud SMS Gateway</option>
+                      <option value="webhook">Custom SMS HTTP Webhook / Gateway</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>SMS API Key / Auth Token (Optional for external SMS gateway)</label>
+                    <input type="password" class="form-control" id="setting-sms-api-key" placeholder="Enter API Key or Auth Token">
+                  </div>
+                  <div class="form-group">
+                    <label>Sender ID / Header (Optional)</label>
+                    <input type="text" class="form-control" id="setting-sms-sender-id" placeholder="e.g. WALLET or TXTIND">
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                  <button type="submit" class="btn-primary">
+                    <i data-lucide="save"></i> Save SMS Preferences
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="NotificationModule.sendTestNotification()">
+                    <i data-lucide="send"></i> Test SMS Dispatch
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODALS -->
+
+  <!-- Modal: Record Income (FR-02) -->
+  <div class="modal-overlay" id="modal-income">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-income-title">Record Income</h3>
+        <button class="btn-close" onclick="closeModal('modal-income')">&times;</button>
+      </div>
+      <form id="form-income" onsubmit="IncomeModule.save(event)">
+        <input type="hidden" id="income-id">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-income-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Transaction Date *</label>
+              <input type="date" class="form-control" id="form-income-date" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Income Source *</label>
+              <select class="form-control" id="form-income-source" required>
+                <!-- Populated dynamically from categories -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Receiving Account *</label>
+              <select class="form-control" id="form-income-account" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Received From</label>
+              <input type="text" class="form-control" id="form-income-payer" placeholder="Employer, Client, Payer Name">
+            </div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <select class="form-control" id="form-income-method">
+                <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Cash">Cash</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Card">Debit / Credit Card</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes / Description</label>
+            <textarea class="form-control" id="form-income-desc" rows="2" placeholder="Optional notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-income')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Income</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Record Expense (FR-03) -->
+  <div class="modal-overlay" id="modal-expense">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-expense-title">Record Expense</h3>
+        <button class="btn-close" onclick="closeModal('modal-expense')">&times;</button>
+      </div>
+      <form id="form-expense" onsubmit="ExpenseModule.save(event)">
+        <input type="hidden" id="expense-id">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-expense-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Transaction Date *</label>
+              <input type="date" class="form-control" id="form-expense-date" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Expense Category *</label>
+              <select class="form-control" id="form-expense-category" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment Account *</label>
+              <select class="form-control" id="form-expense-account" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Paid To (Payee)</label>
+              <input type="text" class="form-control" id="form-expense-payee" placeholder="Merchant, Vendor, Person">
+            </div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <select class="form-control" id="form-expense-method">
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Cash">Cash</option>
+                <option value="Card">Debit / Credit Card</option>
+                <option value="Bank Transfer">Bank Transfer / Net Banking</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes / Description</label>
+            <textarea class="form-control" id="form-expense-desc" rows="2" placeholder="Optional notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-expense')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Record Borrowing (FR-04) -->
+  <div class="modal-overlay" id="modal-borrow">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Record Borrowed Money (Loan Received)</h3>
+        <button class="btn-close" onclick="closeModal('modal-borrow')">&times;</button>
+      </div>
+      <form id="form-borrow" onsubmit="BorrowModule.save(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label style="margin:0;">Lender (Person Name) *</label>
+                <button type="button" class="btn-link-action" onclick="openAddPersonForLoan('borrow')" title="Add new person to directory">
+                  <i data-lucide="user-plus" style="width:13px;height:13px;"></i> + Add Person
+                </button>
+              </div>
+              <select class="form-control" id="form-borrow-person" required onchange="onPersonDropdownChange(this, 'borrow')">
+                <option value="">-- Select Lender --</option>
+                <option value="__ADD_NEW__" style="color:var(--primary); font-weight:700;">➕ + Add New Person...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" class="form-control" id="form-borrow-mobile" placeholder="Contact number">
+              <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" id="form-borrow-notify" checked style="accent-color:var(--primary); cursor:pointer;">
+                <label for="form-borrow-notify" style="margin:0; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
+                  📲 Automatically send SMS receipt to lender's mobile number
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Borrowed Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-borrow-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Receiving Account *</label>
+              <select class="form-control" id="form-borrow-account" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Borrowing Date *</label>
+              <input type="date" class="form-control" id="form-borrow-date" required>
+            </div>
+            <div class="form-group">
+              <label>Repayment Due Date</label>
+              <input type="date" class="form-control" id="form-borrow-duedate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Interest / Terms</label>
+            <input type="text" class="form-control" id="form-borrow-interest" placeholder="e.g. 0% interest, repay next month">
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" id="form-borrow-notes" rows="2" placeholder="Purpose or loan context..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-borrow')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Borrowing</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Record Lending (FR-05) -->
+  <div class="modal-overlay" id="modal-lend">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Record Lent Money (Loan Given)</h3>
+        <button class="btn-close" onclick="closeModal('modal-lend')">&times;</button>
+      </div>
+      <form id="form-lend" onsubmit="LendModule.save(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label style="margin:0;">Borrower (Person Name) *</label>
+                <button type="button" class="btn-link-action" onclick="openAddPersonForLoan('lend')" title="Add new person to directory">
+                  <i data-lucide="user-plus" style="width:13px;height:13px;"></i> + Add Person
+                </button>
+              </div>
+              <select class="form-control" id="form-lend-person" required onchange="onPersonDropdownChange(this, 'lend')">
+                <option value="">-- Select Borrower --</option>
+                <option value="__ADD_NEW__" style="color:var(--primary); font-weight:700;">➕ + Add New Person...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" class="form-control" id="form-lend-mobile" placeholder="Contact number">
+              <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" id="form-lend-notify" checked style="accent-color:var(--primary); cursor:pointer;">
+                <label for="form-lend-notify" style="margin:0; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
+                  📲 Automatically send SMS advice to borrower's mobile number
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Lent Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-lend-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Disbursement Account *</label>
+              <select class="form-control" id="form-lend-account" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Lending Date *</label>
+              <input type="date" class="form-control" id="form-lend-date" required>
+            </div>
+            <div class="form-group">
+              <label>Expected Return Date</label>
+              <input type="date" class="form-control" id="form-lend-returndate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Interest / Terms</label>
+            <input type="text" class="form-control" id="form-lend-interest" placeholder="e.g. Friendly loan, return on 15th">
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" id="form-lend-notes" rows="2" placeholder="Purpose or context..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-lend')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Lending</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Record Repayment (FR-06) -->
+  <div class="modal-overlay" id="modal-repay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Record Debt Repayment</h3>
+        <button class="btn-close" onclick="closeModal('modal-repay')">&times;</button>
+      </div>
+      <form id="form-repay" onsubmit="BorrowModule.submitRepayment(event)">
+        <input type="hidden" id="repay-borrow-id">
+        <div class="modal-body">
+          <div style="background-color:var(--bg-main); padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;">
+            <div style="font-size:0.85rem; color:var(--text-muted);">Lender: <strong id="repay-lender-name" style="color:var(--text-main);"></strong></div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Outstanding Balance: <strong id="repay-outstanding-amt" style="color:var(--danger);"></strong></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Repayment Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-repay-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Payment Date *</label>
+              <input type="date" class="form-control" id="form-repay-date" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Paying Account *</label>
+              <select class="form-control" id="form-repay-account" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <select class="form-control" id="form-repay-method">
+                <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Cash">Cash</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" id="form-repay-notes" rows="2" placeholder="Repayment reference / note..."></textarea>
+            <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+              <input type="checkbox" id="form-repay-notify" checked style="accent-color:var(--primary); cursor:pointer;">
+              <label for="form-repay-notify" style="margin:0; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
+                📲 Automatically send SMS repayment receipt to contact number
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-repay')">Cancel</button>
+          <button type="submit" class="btn-primary">Post Repayment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Record Collection (FR-06) -->
+  <div class="modal-overlay" id="modal-collect">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Record Debt Collection</h3>
+        <button class="btn-close" onclick="closeModal('modal-collect')">&times;</button>
+      </div>
+      <form id="form-collect" onsubmit="LendModule.submitCollection(event)">
+        <input type="hidden" id="collect-lend-id">
+        <div class="modal-body">
+          <div style="background-color:var(--bg-main); padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;">
+            <div style="font-size:0.85rem; color:var(--text-muted);">Borrower: <strong id="collect-borrower-name" style="color:var(--text-main);"></strong></div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Remaining to Collect: <strong id="collect-outstanding-amt" style="color:var(--info);"></strong></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount Collected (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-collect-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Collection Date *</label>
+              <input type="date" class="form-control" id="form-collect-date" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Receiving Account *</label>
+              <select class="form-control" id="form-collect-account" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <select class="form-control" id="form-collect-method">
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                <option value="Cash">Cash</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" id="form-collect-notes" rows="2" placeholder="Collection note / ref..."></textarea>
+            <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+              <input type="checkbox" id="form-collect-notify" checked style="accent-color:var(--primary); cursor:pointer;">
+              <label for="form-collect-notify" style="margin:0; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
+                📲 Automatically send SMS payment receipt to contact number
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-collect')">Cancel</button>
+          <button type="submit" class="btn-primary">Post Collection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Transfer Funds (FR-10) -->
+  <div class="modal-overlay" id="modal-transfer">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Internal Account Transfer</h3>
+        <button class="btn-close" onclick="closeModal('modal-transfer')">&times;</button>
+      </div>
+      <form id="form-transfer" onsubmit="AccountModule.transfer(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>From Account (Source) *</label>
+              <select class="form-control" id="form-transfer-from" required></select>
+            </div>
+            <div class="form-group">
+              <label>To Account (Destination) *</label>
+              <select class="form-control" id="form-transfer-to" required></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Transfer Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-transfer-amount" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Transfer Date *</label>
+              <input type="date" class="form-control" id="form-transfer-date" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" class="form-control" id="form-transfer-notes" placeholder="e.g. ATM withdrawal, bank deposit">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-transfer')">Cancel</button>
+          <button type="submit" class="btn-primary">Execute Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Account (FR-10) -->
+  <div class="modal-overlay" id="modal-account">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-account-title">Add Financial Account</h3>
+        <button class="btn-close" onclick="closeModal('modal-account')">&times;</button>
+      </div>
+      <form id="form-account" onsubmit="AccountModule.save(event)">
+        <input type="hidden" id="account-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Account Name *</label>
+            <input type="text" class="form-control" id="form-account-name" required placeholder="e.g. HDFC Salary, Cash Wallet">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Account Type *</label>
+              <select class="form-control" id="form-account-type" required>
+                <option value="Savings Bank Account">Savings Bank Account</option>
+                <option value="Current Bank Account">Current Bank Account</option>
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI / Digital Wallet</option>
+                <option value="Credit Card">Credit Card / Line</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Opening Balance (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="form-account-opening" required value="0.00">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bank Name</label>
+              <input type="text" class="form-control" id="form-account-bank" placeholder="e.g. SBI, HDFC">
+            </div>
+            <div class="form-group">
+              <label>Account / Card Number</label>
+              <input type="text" class="form-control" id="form-account-number" placeholder="Optional identifier">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" class="form-control" id="form-account-notes" placeholder="Optional details">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-account')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Person (FR-07) -->
+  <div class="modal-overlay" id="modal-person">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-person-title">Add Person to Directory</h3>
+        <button class="btn-close" onclick="closeModal('modal-person')">&times;</button>
+      </div>
+      <form id="form-person" onsubmit="PeopleModule.save(event)">
+        <input type="hidden" id="person-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" class="form-control" id="form-person-name" required placeholder="Person's full name">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" class="form-control" id="form-person-mobile" placeholder="+91 98765 43210">
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" class="form-control" id="form-person-email" placeholder="email@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Address / Location</label>
+            <input type="text" class="form-control" id="form-person-address" placeholder="City or address">
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" id="form-person-notes" rows="2" placeholder="Relationship or reference notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-person')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Person</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Category (FR-03, FR-13) -->
+  <div class="modal-overlay" id="modal-category">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Create New Category</h3>
+        <button class="btn-close" onclick="closeModal('modal-category')">&times;</button>
+      </div>
+      <form id="form-category" onsubmit="CategoryModule.save(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Category Name *</label>
+            <input type="text" class="form-control" id="form-cat-name" required placeholder="e.g. Groceries, Gym, Software">
+          </div>
+          <div class="form-group">
+            <label>Category Type *</label>
+            <select class="form-control" id="form-cat-type">
+              <option value="Expense">Expense</option>
+              <option value="Income">Income</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Accent Color</label>
+              <input type="color" class="form-control" id="form-cat-color" value="#4f46e5" style="height:42px; padding:4px;">
+            </div>
+            <div class="form-group">
+              <label>Icon</label>
+              <select class="form-control" id="form-cat-icon">
+                <option value="tag">Tag</option>
+                <option value="shopping-bag">Shopping</option>
+                <option value="coffee">Food / Coffee</option>
+                <option value="heart">Health</option>
+                <option value="briefcase">Work</option>
+                <option value="gift">Gift</option>
+                <option value="tool">Utilities</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-category')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Automated SMS Delivery Confirmation & Receipt -->
+  <div class="modal-overlay" id="modal-notification-sent" style="z-index: 1300;">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 style="display:flex; align-items:center; gap:8px;">
+          <i data-lucide="message-square" style="color:var(--primary);"></i> Automated SMS Dispatched
+        </h3>
+        <button class="btn-close" onclick="closeModal('modal-notification-sent')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background-color:rgba(16, 185, 129, 0.12); color:#10b981; padding:12px 16px; border-radius:var(--radius-sm); margin-bottom:14px; display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem; border: 1px solid rgba(16, 185, 129, 0.25);">
+          <i data-lucide="check-circle-2" style="width:20px;height:20px;"></i>
+          <span id="notif-modal-recipient">SMS Dispatched to contact number</span>
+        </div>
+        
+        <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:8px;">
+          The following SMS message was automatically generated and sent to the contact number:
+        </p>
+
+        <div style="position:relative;">
+          <pre id="notif-modal-message" style="font-family: inherit; font-size: 0.88rem; line-height: 1.5; white-space: pre-wrap; background: var(--bg-main); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); color: var(--text-main); margin: 0; user-select: text;"></pre>
+        </div>
+
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted);">
+          <span>SMS Gateway: <strong id="notif-modal-gateway-name" style="color:var(--text-main);">Catalyst Automated SMS Engine</strong></span>
+          <span id="notif-modal-status-badge" class="badge badge-completed" style="padding:4px 8px; font-size:0.75rem;">Dispatched</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn-secondary" onclick="NotificationModule.copyNotificationText()">
+          <i data-lucide="copy"></i> Copy SMS Text
+        </button>
+        <div style="display:flex; gap:8px;">
+          <a id="notif-modal-sms-link" href="#" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px;" title="Open in Device Native SMS App">
+            <i data-lucide="smartphone"></i> Open SMS App
+          </a>
+          <button type="button" class="btn-secondary" onclick="NotificationModule.resendActiveSms()" title="Resend SMS">
+            <i data-lucide="refresh-cw"></i> Resend SMS
+          </button>
+          <button type="button" class="btn-primary" onclick="closeModal('modal-notification-sent')">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datalist for Auto-completing People -->
+  <datalist id="people-datalist"></datalist>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main JavaScript Application Logic -->
+  <script src="main.js"></script>
+</body>
+</html>
