@@ -33,9 +33,33 @@ function getErrorMessage(json, defaultMsg = 'An error occurred') {
   return defaultMsg;
 }
 
+// Transparent CORS preflight bypass for cross-origin hosting (Catalyst Slate -> Catalyst Serverless)
+const _nativeFetch = window.fetch;
+window.fetch = async function(url, options = {}) {
+  if (typeof url === 'string' && (url.includes('catalystserverless.in') || (window.location.hostname.includes('onslate.in') && !url.startsWith('/')))) {
+    const opts = { ...options };
+    const method = (opts.method || 'GET').toUpperCase();
+
+    if (method !== 'GET' && method !== 'HEAD') {
+      let targetUrl = url;
+      if (method !== 'POST') {
+        const separator = targetUrl.includes('?') ? '&' : '?';
+        targetUrl = `${targetUrl}${separator}_method=${method}`;
+      }
+      opts.method = 'POST';
+      opts.headers = {
+        ...(opts.headers || {}),
+        'Content-Type': 'text/plain'
+      };
+      return _nativeFetch(targetUrl, opts);
+    }
+  }
+  return _nativeFetch(url, options);
+};
+
 // Auto-detect whether we are running inside Catalyst router, Slate, or standalone Flask
 async function initApiBase() {
-  const CLOUD_FUNCTION_URL = 'https://wallet-note-60072054003.development.catalystserverless.in/server/wallet_note_function/api';
+  const CLOUD_FUNCTION_URL = 'https://wallet-60072054003.development.catalystserverless.in/server/wallet_function/api';
 
   // 1. If running on Catalyst Slate (onslate.in)
   if (window.location.hostname.includes('onslate.in')) {

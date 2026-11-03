@@ -14,6 +14,13 @@ app = Flask(__name__, static_folder=CLIENT_DIR)
 # Register REST API
 app.register_blueprint(api_bp)
 
+@app.after_request
+def add_cors(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    return response
+
 # Serve Client Static Assets
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
